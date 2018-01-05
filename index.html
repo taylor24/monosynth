@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-	<title>Web MIDI monosynth using Web Audio</title>
+	<title>Web MIDI 3Osc using Web Audio</title>
 
 	<!-- Set up Web MIDI polyfill -->
     <script src='//cwilso.github.com/WebMIDIAPIShim/lib/WebMIDIAPI.js'></script>
@@ -24,13 +24,21 @@
 
 		var context=null;		// the Web Audio "context" object
 		var midiAccess=null;	// the MIDIAccess object.
-		var oscillator=null;	// the single oscillator
-		var envelope=null;		// the envelope for the single oscillator
+		var oscillator=null;	// the 1 oscillator
+		var oscillator2=null;	// the 2 oscillator
+		var oscillator3=null;	// the 3 oscillator
+		var envelope=null;		// the envelope for 1 single oscillator
+		var envelope2=null;		// the envelope for 2 single oscillator
+		var envelope3=null;		// the envelope for 3 single oscillator
 		var attack=0.05;			// attack speed
 		var release=0.05;		// release speed
 		var portamento=0.05;	// portamento/glide speed
 		var activeNotes = [];	// the stack of actively-pressed keys
 
+		/*
+		0-127 key range
+		*/
+		
 		window.addEventListener('load', function() {
 			// patch up prefixes
 			window.AudioContext=window.AudioContext||window.webkitAudioContext;
@@ -42,13 +50,32 @@
 				alert("No MIDI support present in your browser.  You're gonna have a bad time.")
 
 			// set up the basic oscillator chain, muted to begin with.
-			oscillator = context.createOscillator();
-			oscillator.frequency.setValueAtTime(110, 0);
-			envelope = context.createGain();
-			oscillator.connect(envelope);
-			envelope.connect(context.destination);
-			envelope.gain.value = 0.0;  // Mute the sound
-			oscillator.start(0);  // Go ahead and start up the oscillator
+			oscillator1 = context.createOscillator();
+			oscillator1.frequency.setValueAtTime(110, 0);
+			envelope1 = context.createGain();
+			oscillator1.connect(envelope1);
+			oscillator1.isActive = false;
+			envelope1.connect(context.destination);
+			envelope1.gain.value = 0.0;  // Mute the sound
+			oscillator1.start(0);  // Go ahead and start up the oscillator
+			
+			oscillator2 = context.createOscillator();
+			oscillator2.frequency.setValueAtTime(110, 0);
+			envelope2 = context.createGain();
+			oscillator2.connect(envelope2);
+			oscillator2.isActive = false;
+			envelope2.connect(context.destination);
+			envelope2.gain.value = 0.0;  // Mute the sound
+			oscillator2.start(0);  // Go ahead and start up the oscillator
+			
+			oscillator3 = context.createOscillator();
+			oscillator3.frequency.setValueAtTime(110, 0);
+			envelope3 = context.createGain();
+			oscillator3.connect(envelope3);
+			oscillator3.isActive = false;
+			envelope3.connect(context.destination);
+			envelope3.gain.value = 0.0;  // Mute the sound
+			oscillator3.start(0);  // Go ahead and start up the oscillator
 		} );
 
 		function hookUpMIDIInput() {
@@ -89,37 +116,226 @@
 					return;
 			}
 		}
-
+		
+		function updateChordName(){
+			var x = noteNumberToNoteName(oscillator1.noteNumber);
+			var y = noteNumberToNoteName(oscillator2.noteNumber);
+			var z = noteNumberToNoteName(oscillator3.noteNumber);
+			document.getElementById("chordName").textContent = "Chord: " + getMajorChordName( x, y, z );
+		}
+		
+		//♭
+		function getMajorChordName( x, y, z ){
+			if(x == "C" && y == "E" && z == "G"){
+				return "C Major";
+			}else if(x == "C#/D♭" && y == "F" && z == "G#/A♭"){
+				return "C#/D♭ Major";
+			}else if(x == "D" && y == "F#/G♭" && z == "A"){
+				return "D Major";
+			}else if(x == "D#" && y == "F" && z == "A#/B♭"){
+				return "D#/E♭ Major";
+			}else if(x == "E" && y == "G#/A♭" && z == "B"){
+				return "E Major";
+			}else if(x == "F" && y == "A" && z == "C"){
+				return "F Major";
+			}else if(x == "F#/G♭" && y == "A#/B♭" && z == "C#/D♭"){
+				return "F# Major";
+			}else if(x == "G" && y == "B" && z == "D"){
+				return "G Major";
+			}else if(x == "G#/A♭" && y == "C" && z == "D#/E♭"){
+				return "G# Major";
+			}else if(x == "A" && y == "C#/D♭" && z == "E"){
+				return "A Major";
+			}else if(x == "A#/B♭" && y == "D" && z == "F"){
+				return "A# Major";
+			}else if(x == "B" && y == "D#/E♭" && z == "F#/G♭"){
+				return "B Major";
+			}
+		}
+		
 		function frequencyFromNoteNumber( note ) {
 			return 440 * Math.pow(2,(note-69)/12);
 		}
 
+		function noteNumberToNoteName( noteNumber ){
+			switch( noteNumber ){
+				case 21:
+				case 33:
+				case 45:
+				case 57:
+				case 69:
+				case 81:
+				case 93:
+					return "A";
+				case 22:
+				case 34:
+				case 46:
+				case 58:
+				case 70:
+				case 82:
+				case 94:
+				case 106:
+					return "A#/B♭";
+				case 23:
+				case 35:
+				case 47:
+				case 59:
+				case 71:
+				case 83:
+				case 95:
+				case 107:
+					return "B";
+				case 24:
+				case 36:
+				case 48:
+				case 60:
+				case 72:
+				case 84:
+				case 96:
+				case 108:
+					return "C";
+				case 25:
+				case 37:
+				case 49:
+				case 61:
+				case 73:
+				case 85:
+				case 97:
+					return "C#/D♭";
+				case 26:
+				case 38:
+				case 50:
+				case 62:
+				case 74:
+				case 86:
+				case 98:
+					return "D";
+				case 27:
+				case 39:
+				case 51:
+				case 63:
+				case 75:
+				case 87:
+				case 99:
+					return "D#/E♭";
+				case 28:
+				case 40:
+				case 52:
+				case 64:
+				case 76:
+				case 88:
+				case 100:
+					return "E";
+				case 29:
+				case 40:
+				case 53:
+				case 65:
+				case 77:
+				case 89:
+				case 101:
+					return "F";
+				case 30:
+				case 42:
+				case 54:
+				case 66:
+				case 78:
+				case 90:
+				case 102:
+					return "F#/G♭";
+				case 31:
+				case 43:
+				case 55:
+				case 67:
+				case 79:
+				case 91:
+				case 103:
+					return "G";
+				case 32:
+				case 44:
+				case 56:
+				case 68:
+				case 80:
+				case 92:
+				case 104:
+					return "G#/A♭";
+				case 33:
+				case 45:
+				case 57:
+				case 69:
+				case 81:
+				case 93:
+				case 105:
+					return "G#/A♭";
+				default:
+					return "Null";
+			}
+		}
+		
 		function noteOn(noteNumber) {
-			activeNotes.push( noteNumber );
-			oscillator.frequency.cancelScheduledValues(0);
-			oscillator.frequency.setTargetAtTime( frequencyFromNoteNumber(noteNumber), 0, portamento );
-			envelope.gain.cancelScheduledValues(0);
-			envelope.gain.setTargetAtTime(1.0, 0, attack);
+			updateChordName(noteNumberToNoteName(oscillator1.noteNumber),
+			noteNumberToNoteName(oscillator2.noteNumber),
+			noteNumberToNoteName(oscillator3.noteNumber));
+			if(!oscillator1.isAcitve){
+				document.getElementById("one").textContent = noteNumberToNoteName(noteNumber);
+				oscillator1.isAcitve = true;
+				oscillator1.noteNumber = noteNumber;
+				oscillator1.frequency.cancelScheduledValues(0);
+				oscillator1.frequency.setTargetAtTime( frequencyFromNoteNumber(noteNumber), 0, portamento );
+				envelope1.gain.cancelScheduledValues(0);
+				envelope1.gain.setTargetAtTime(1.0, 0, attack);
+			}else if(!oscillator2.isAcitve){
+				document.getElementById("two").textContent = noteNumberToNoteName(noteNumber);
+				oscillator2.isAcitve = true;
+				oscillator2.noteNumber = noteNumber;
+				oscillator2.frequency.cancelScheduledValues(0);
+				oscillator2.frequency.setTargetAtTime( frequencyFromNoteNumber(noteNumber), 0, portamento );
+				envelope2.gain.cancelScheduledValues(0);
+				envelope2.gain.setTargetAtTime(1.0, 0, attack);
+			}else if(!oscillator3.isAcitve){
+				document.getElementById("three").textContent = noteNumberToNoteName(noteNumber);
+				oscillator3.isAcitve = true;
+				oscillator3.noteNumber = noteNumber;
+				oscillator3.frequency.cancelScheduledValues(0);
+				oscillator3.frequency.setTargetAtTime( frequencyFromNoteNumber(noteNumber), 0, portamento );
+				envelope3.gain.cancelScheduledValues(0);
+				envelope3.gain.setTargetAtTime(1.0, 0, attack);
+			}
 		}
 
 		function noteOff(noteNumber) {
-			var position = activeNotes.indexOf(noteNumber);
-			if (position!=-1) {
-				activeNotes.splice(position,1);
-			}
-			if (activeNotes.length==0) {	// shut off the envelope
-				envelope.gain.cancelScheduledValues(0);
-				envelope.gain.setTargetAtTime(0.0, 0, release );
-			} else {
-				oscillator.frequency.cancelScheduledValues(0);
-				oscillator.frequency.setTargetAtTime( frequencyFromNoteNumber(activeNotes[activeNotes.length-1]), 0, portamento );
+			if(oscillator1.noteNumber == noteNumber){
+				document.getElementById("one").textContent = "";
+				oscillator1.noteNumber = null;
+				oscillator1.isAcitve = false;
+				//shut off envelope
+				envelope1.gain.cancelScheduledValues(0);
+				envelope1.gain.setTargetAtTime(0.0, 0, release );
+			}else if(oscillator2.noteNumber == noteNumber){
+				document.getElementById("two").textContent = "";
+				oscillator2.noteNumber = null;
+				oscillator2.isAcitve = false;
+				//shut off envelope
+				envelope2.gain.cancelScheduledValues(0);
+				envelope2.gain.setTargetAtTime(0.0, 0, release );
+			}else if(oscillator3.noteNumber == noteNumber){
+				document.getElementById("three").textContent = "";
+				oscillator3.noteNumber = null;
+				oscillator3.isAcitve = false;
+				//shut off envelope
+				envelope3.gain.cancelScheduledValues(0);
+				envelope3.gain.setTargetAtTime(0.0, 0, release );
 			}
 		}
 	</script>
 </head>
 <body>
 	This example uses Web MIDI input (from all available ports and channels) to drive a Web Audio monophonic synthesizer.  There is no UI.  <a href="http://github.com/cwilso/monosynth">Source available on github.</a>
-
+	<br />
+	<span id="one"></span>,
+	<span id="two"></span>,
+	<span id="three"></span>
+	<br />
+	<span id="chordName"></span>
 	<h2 id="badtime" style="visibility:hidden">No MIDI input devices present.  You're gonna have a bad time.</h2>
 </body>
 </html>
